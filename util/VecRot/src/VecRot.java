@@ -52,6 +52,17 @@ public class VecRot {
 		System.out.println(name.toUpperCase() + "_LIST_LEN		equ " + vl.length / 2 + "\n");		
 		System.out.println(name + "_vector_frames:");
 		
+		// Because of the rounding later on, there will still be some distortion on the vector lists
+		// Try to make the end of the lists at least match up
+		int xx = 0;
+		int yy = 0;
+		
+		for (int i = 0; i < vl.length; i += 2)
+		{	
+			yy += vl[i];
+			xx += vl[i + 1];
+		}
+		
 		for (int angleIdx = 0; angleIdx < 64; angleIdx++)
 		{
 			System.out.println("		dw	" + name + "_vector_list_" + angleIdx);
@@ -75,6 +86,9 @@ public class VecRot {
 			double xr0 = 0.0;
 			double yr0 = 0.0;
 			
+			int xSum = 0;
+			int ySum = 0;
+			
 			for (int i = 0; i < vl.length; i += 2)
 			{	
 				double y = y0 + (double)vl[i];
@@ -88,11 +102,22 @@ public class VecRot {
 				int dy = (int) Math.round(yr - yr0);
 				int dx = (int) Math.round(xr - xr0);
 				
+				// Is this the last point?
+				if ((i + 2) >= vl.length) {
+					// Use the 'needed' coordinates to end up with distance xx and yy as calculated above
+					dy = yy - ySum;
+					dx = xx - xSum;
+				}
+				
 				if ((dy < -128) || (dy > 127) || (dx < -128) || (dx > 127)) {
 					System.out.println(";  WARNING COORDINATE TOO BIG!");
 				}
 				
-				System.out.println("		db " + Math.round(yr - yr0) + ", " + Math.round(xr - xr0));
+				System.out.println("		db " + dy + ", " + dx);
+				
+				// Need to keep track of the rounded integers as well
+				ySum += dy;
+				xSum += dx;
 				
 				y0 = y;
 				x0 = x;
@@ -106,7 +131,7 @@ public class VecRot {
 	// Example use:
 	public static void main(String[] args) {
 		int [] vl = { -10, -3, 0, 6, 10, -3 };
-		
+
 		Rotate("triangle", vl);
 	}
 
